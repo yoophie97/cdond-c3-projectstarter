@@ -178,6 +178,8 @@ jobs:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment:
           workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
 
   configure-infrastructure:
     docker:
@@ -200,6 +202,8 @@ jobs:
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
       - destroy-environment:
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
           workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}  
 
   run-migrations:
@@ -232,6 +236,8 @@ jobs:
               curl --insecure https://kvdb.io/Av2gLHMmaQRinmszBBonh2/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
       - destroy-environment:
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
           workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
 
   deploy-frontend:
@@ -272,7 +278,9 @@ jobs:
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       # Here's where you will add some code to rollback on failure      
       - destroy-environment:
-          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}  
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
 
   deploy-backend:
     docker:
@@ -348,8 +356,11 @@ jobs:
             else
                 return 1
             fi
-      # Here's where you will add some code to rollback on failure  
-            
+      - destroy-environment:
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
+
 workflows:
   default:
     jobs:
