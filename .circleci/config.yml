@@ -303,11 +303,25 @@ jobs:
           name: Deploy backend
           command: |
             cd backend
-            npm i
+            echo "NODE_ENV=production" >> .env
+            echo "BACKEND_PORT=3030" >> .env
+            echo "TYPEORM_CONNECTION = ${TYPEORM_CONNECTION}" >> .env
+            echo "TYPEORM_ENTITIES = ${TYPEORM_ENTITIES}" >> .env
+            echo "TYPEORM_HOST = ${TYPEORM_HOST}" >> .env
+            echo "TYPEORM_PORT = ${TYPEORM_PORT}" >> .env
+            echo "TYPEORM_USERNAME = ${TYPEORM_USERNAME}" >> .env
+            echo "TYPEORM_PASSWORD = ${TYPEORM_PASSWORD}" >> .env
+            echo "TYPEORM_DATABASE = ${TYPEORM_DATABASE}" >> .env
+            echo "TYPEORM_MIGRATIONS = ${TYPEORM_MIGRATIONS}" >> .env
+            echo "TYPEORM_MIGRATIONS_DIR = ${TYPEORM_MIGRATIONS_DIR}" >> .env
+            cat .env
+            npm i --legacy-peer-deps
             npm run build
             cd ..
             # Zip the directory
             tar -C backend -czvf artifact.tar.gz .
+            mkdir -p ~/project/.circleci/ansible/roles/deploy/files
+            cp artifact.tar.gz .circleci/ansible/roles/deploy/files
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
@@ -337,14 +351,21 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              \
+                --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                --output text
+              )
             export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
-            if curl "${API_URL}/api/status" | grep "ok"
-            then
-                return 0
-            else
-                return 1
-            fi
+            echo "${API_URL}/api/status"
+            #if curl "${API_URL}/api/status" | grep "ok"
+            #then
+            #    return 0
+            #else
+            #    return 1
+            #fi
+            # your code here
       - run:
           name: Frontend smoke test.
           command: |
@@ -383,12 +404,12 @@ workflows:
      #     requires: [deploy-infrastructure]
      # - run-migrations:
      #     requires: [configure-infrastructure]
-     # - deploy-frontend:
+      - deploy-frontend
      #     requires: [run-migrations]
-      #- deploy-backend:
+      - deploy-backend
     #      requires: [run-migrations]
-      - smoke-test
-      #    requires: [deploy-backend, deploy-frontend]
+      - smoke-test:
+          requires: [deploy-backend, deploy-frontend]
       #- cloudfront-update:
       #    requires: [smoke-test]
       #- cleanup:
