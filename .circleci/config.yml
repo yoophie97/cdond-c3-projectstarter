@@ -26,7 +26,29 @@ commands:
             aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.workflow_id>>
             aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.workflow_id>>
 
-
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.
+    parameters:
+      workflow_id:
+        type: string 
+      # Add parameter here     
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          # Add when this will run
+          command: |
+            # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
+            # export SUCCESS_URL=
+            if curl --insecure "https://kvdb.io/Av2gLHMmaQRinmszBBonh2/migration_<<parameters.workflow_id>>" 
+            then
+              cd ~/project/backend
+              npm install --legacy-peer-deps
+              npm run migrations:revert
+              #  Add revert code here. You can find this in the Getting Started section.
+              # exit 1
+            fi
+      
 jobs:
   build-frontend:
     docker:
@@ -283,6 +305,50 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
       # Here's where you will add some code to rollback on failure  
+      - destroy-environment:
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
+
+  smoke-test:
+    docker:
+      - image: python:3.7-alpine3.16 
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+            pip install awscli
+            apk add --update --no-cache curl tar gzip nodejs npm
+
+      - run:
+          name: Get backend url
+          command: |
+            # your code here
+      - run:
+          name: Backend smoke test.
+          command: |
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+                return 0
+            else
+                return 1
+            fi
+      - run:
+          name: Frontend smoke test.
+          command: |
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+                return 0
+            else
+                return 1
+            fi
+      # Here's where you will add some code to rollback on failure  
             
 workflows:
   default:
@@ -308,9 +374,9 @@ workflows:
      #     requires: [configure-infrastructure]
      # - deploy-frontend:
      #     requires: [run-migrations]
-      - deploy-backend
+      #- deploy-backend:
     #      requires: [run-migrations]
-      #- smoke-test:
+      - smoke-test
       #    requires: [deploy-backend, deploy-frontend]
       #- cloudfront-update:
       #    requires: [smoke-test]
