@@ -250,33 +250,66 @@ jobs:
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       # Here's where you will add some code to rollback on failure      
       - destroy-environment:
-          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}              
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}  
+
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.16
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["23:da:d1:22:19:74:7d:a5:b8:c7:76:81:ba:fc:b4:7d"]
+
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+            pip install awscli
+            apk add --update --no-cache curl tar gzip nodejs npm
+
+      - run:
+          name: Deploy backend
+          command: |
+            cd backend
+            npm i
+            npm run build
+            cd ..
+            # Zip the directory
+            tar -C backend -czvf artifact.tar.gz .
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      # Here's where you will add some code to rollback on failure  
+            
 workflows:
   default:
     jobs:
-      - build-frontend
-      - build-backend
-      - test-frontend:
-          requires: [build-frontend]
-      - test-backend:
-          requires: [build-backend]
-      - scan-backend:
-          requires: [build-backend]
-      - scan-frontend:
-          requires: [build-frontend]
-      - deploy-infrastructure:
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-          filters:
-            branches:
-              only: [master]
-      - configure-infrastructure:
-          requires: [deploy-infrastructure]
-      - run-migrations:
-          requires: [configure-infrastructure]
-      - deploy-frontend:
+     # - build-frontend
+     # - build-backend
+     # - test-frontend:
+     #     requires: [build-frontend]
+     # - test-backend:
+     #     requires: [build-backend]
+     # - scan-backend:
+     #     requires: [build-backend]
+     # - scan-frontend:
+     #     requires: [build-frontend]
+     # - deploy-infrastructure:
+     #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+     #     filters:
+     #       branches:
+     #         only: [master]
+     # - configure-infrastructure:
+     #     requires: [deploy-infrastructure]
+     # - run-migrations:
+     #     requires: [configure-infrastructure]
+     # - deploy-frontend:
+     #     requires: [run-migrations]
+      - deploy-backend:
           requires: [run-migrations]
-      #- deploy-backend:
-      #    requires: [run-migrations]
       #- smoke-test:
       #    requires: [deploy-backend, deploy-frontend]
       #- cloudfront-update:
