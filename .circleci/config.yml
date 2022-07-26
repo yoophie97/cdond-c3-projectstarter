@@ -1,6 +1,16 @@
 version: 2.1
 
 commands:
+  install-dep-aws-executor:
+    description: Install the necessary packages for aws executor
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            yum -y install wget tar gzip python37
+            curl -sL https://rpm.nodesource.com/setup_12.x | bash -
+            yum install -y nodejs
+
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
@@ -115,6 +125,7 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - install-dep-aws-executor
       - run:
           name: Ensure back-end infrastructure exists
           command: |
