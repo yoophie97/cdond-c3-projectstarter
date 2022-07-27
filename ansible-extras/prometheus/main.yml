@@ -1,0 +1,11 @@
+---
+- name: Configure Prometheus Server Instance Playbook
+  hosts: server
+  user: ubuntu 
+  become: true 
+  become_method: sudo 
+  become_user: root 
+
+  roles:
+    - configure-prometheus-server
+    - configure-alert-manager
