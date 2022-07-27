@@ -1,0 +1,8 @@
+---
+ - name: Add users 
+   shell: useradd mariam
+  
+
+ #- name: print message
+ #  debug:
+ #    msg: "{{ print_result.stdout_lines }}"
