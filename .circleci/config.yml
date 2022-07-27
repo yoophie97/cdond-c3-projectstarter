@@ -172,13 +172,13 @@ jobs:
       - checkout
       - install-dep-aws-executor
       - run:
-          name: Ensure front-end infrastructure exist
+          name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
-              --template-file .circleci/files/frontend.yml \
+              --template-file .circleci/files/backend.yml \
               --tags project=udapeople \
-              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -300,10 +300,7 @@ jobs:
       - attach_workspace:
           at: ~/
       - add_ssh_keys:
-          fingerprints: ["4b:cf:eb:40:6d:08:df:18:f4:a2:72:dd:ce:7d:40:5d"]
-      # Checkout code from git
-      # Add ssh keys with fingerprint
-      # attach workspace
+          fingerprints: ["23:da:d1:22:19:74:7d:a5:b8:c7:76:81:ba:fc:b4:7d"]
       - install-dep-python-executor
           # your code here
       - run:
