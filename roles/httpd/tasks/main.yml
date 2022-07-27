@@ -1,0 +1,13 @@
+---
+- name: "Install Apache2"
+  become: true
+  yum:
+    name: ["httpd"]
+    state: latest
+    update_cache: yes
+
+- name: "Install index.html page"
+  copy:
+    src: index.html
+    dest: /var/www/html/index.html
+    backup: yes
