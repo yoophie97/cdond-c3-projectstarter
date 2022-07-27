@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: | 
+  Similoluwa Okunowo | Provision RDS Database Instance
+
+Parameters: 
+  DBUsername:
+    NoEcho: 'true'
+    Description: Username for MySQL database access
+    Type: String
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+
+  DBPassword:
+    NoEcho: 'true'
+    Description: Password MySQL database access
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+
+Resources: 
+  MyPostgreSQLDatabaseInstance: 
+    Type: 'AWS::RDS::DBInstance'
+    Properties: 
+      DBInstanceIdentifier: dbinstance 
+      DBInstanceClass: db.t3.micro
+      DBName: mydb
+      PubliclyAccessible: true 
+      MultiAZ: false 
+      AllocatedStorage: 20 
+      Engine: postgres
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword 
+      Tags: 
+        - Key: Project 
+          Value: ALX-CDO-Project-3-Database
+Outputs: 
+  DBPublicIP: 
+    Description: A reference to the connection endpoint for the database 
+    Value: !GetAtt MyPostgreSQLDatabaseInstance.Endpoint.Address 
+    Export: 
+      Name: 'ALX-Project-3-DB-Endpoint'
