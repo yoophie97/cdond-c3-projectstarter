@@ -1,6 +1,16 @@
 version: 2.1
 
 commands:
+  install-dep-python-executor:
+    description: Install the necessary packages for python image executor
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+            pip install awscli
+            apk add --update --no-cache curl tar gzip nodejs npm
+  
   install-dep-aws-executor:
     description: Install the necessary packages for aws executor
     steps:
@@ -30,13 +40,11 @@ commands:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
       workflow_id:
-        type: string 
-      # Add parameter here     
+        type: string     
     steps:
       - run:
           name: Revert migrations
           when: on_fail
-          # Add when this will run
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
             # export SUCCESS_URL=
@@ -140,6 +148,7 @@ jobs:
             cd frontend
             npm install
             npm audit fix --audit-level=critical --force
+            npm audit fix --force
             npm audit --audit-level=critical
 
   deploy-infrastructure:
@@ -178,18 +187,16 @@ jobs:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment:
           workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
 
   configure-infrastructure:
     docker:
       - image: python:3.7-alpine3.16
     steps:
       - checkout
-      - add_ssh_keys:
-          fingerprints: ["23:da:d1:22:19:74:7d:a5:b8:c7:76:81:ba:fc:b4:7d"]
       - attach_workspace:
           at: ~/
+      - add_ssh_keys:
+          fingerprints: ["23:da:d1:22:19:74:7d:a5:b8:c7:76:81:ba:fc:b4:7d"]
       - run:
           name: Install dependencies
           command: |
@@ -202,9 +209,7 @@ jobs:
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
       - destroy-environment:
-          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}  
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7} 
 
   run-migrations:
     docker:
@@ -235,9 +240,9 @@ jobs:
               # If you are using kvdb.io, generate the bucket ID "9GE4jRtKznmVKRfvdBABBe" in your local terminal first
               curl --insecure https://kvdb.io/Av2gLHMmaQRinmszBBonh2/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
-      - destroy-environment:
-          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
+          workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment:
           workflow_id:  ${CIRCLE_WORKFLOW_ID:0:7}
 
   deploy-frontend:
@@ -265,6 +270,7 @@ jobs:
                 --output text
               )
             export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
             echo "API_URL = ${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
             cat frontend/.env
@@ -343,11 +349,6 @@ jobs:
             apk add --update ansible
             pip install awscli
             apk add --update --no-cache curl tar gzip nodejs npm
-
-      - run:
-          name: Get backend url
-          command: |
-            # your code here
       - run:
           name: Backend smoke test.
           command: |
@@ -399,7 +400,7 @@ jobs:
           command: |
             aws cloudformation deploy \
             --template-file .circleci/files/cloudfront.yml \
-            --stack-name udapeople \
+            --stack-name Udapeople \
             --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople
       - destroy-environment:
