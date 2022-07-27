@@ -1,0 +1,38 @@
+Description: >
+  Prometheus Server EC2 Instance
+
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: Prometheus
+      GroupDescription: Allow port 22, 9090, 9100, 9093
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 9090
+          ToPort: 9090
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp 
+          FromPort: 9100 
+          ToPort: 9100 
+          CidrIp: 0.0.0.0/0 
+        - IpProtocol: tcp 
+          FromPort: 9093 
+          ToPort: 9093 
+          CidrIp: 0.0.0.0/0
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      SecurityGroups:
+        - Ref: InstanceSecurityGroup
+      KeyName: ademola-east-2
+      ImageId: ami-09d56f8956ab235b3
+      Tags:
+        - Key: Name
+          Value: Prometheus-Server
