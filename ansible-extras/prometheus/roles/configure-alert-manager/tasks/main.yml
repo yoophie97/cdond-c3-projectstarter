@@ -1,0 +1,54 @@
+--- 
+- name: Download Alert manager 
+  unarchive: 
+    src: https://github.com/prometheus/alertmanager/releases/download/v0.21.0/alertmanager-0.21.0.linux-amd64.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Create alertmanager directories 
+  become: yes 
+  shell: > 
+    mkdir /var/lib/alertmanager 
+  ignore_errors: yes 
+
+- name: Move 'alertmanager' binary to /usr/local/bin 
+  become: yes 
+  copy: 
+    src: /tmp/alertmanager-0.21.0.linux-amd64/alertmanager
+    dest: /usr/local/bin/alertmanager
+    mode: '0777'
+    remote_src: yes
+
+- name: Move 'amtool' binary to /usr/local/bin 
+  become: yes 
+  copy: 
+    src: /tmp/alertmanager-0.21.0.linux-amd64/amtool
+    dest: /usr/local/bin/amtool
+    mode: '0777'
+    remote_src: yes
+
+- name: Copy alertmanager.yml file to /etc/prometheus
+  become: yes
+  copy: 
+    src: alertmanager.yml 
+    dest: /etc/prometheus 
+
+- name: Copy rules.yml file to /etc/prometheus 
+  become: yes 
+  copy: 
+    src: rules.yml 
+    dest: /etc/prometheus 
+    
+- name: Copy alertmanager service configuration 
+  become: yes
+  copy: 
+    src: alertmanager.service 
+    dest: /etc/systemd/system/
+
+- name: Start the alertmanager service 
+  become: yes
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: alertmanager
+    enabled: yes
