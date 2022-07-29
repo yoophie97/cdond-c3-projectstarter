@@ -1,27 +1,20 @@
 ---
-- name: install nodejs prerequisites
-  become: yes
+- name: "upgrade packages."
+  become: true
   apt:
-    name:
-      - apt-transport-https
-      - gcc
-      - g++
-      - make
-    state: present
-- name: add nodejs apt key
-  become: yes
-  apt_key:
-    url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
-    state: present
-- name: add nodejs repository
-  become: yes
-  apt_repository:
-    repo: deb https://deb.nodesource.com/node_12.x {{ ansible_lsb.codename }} main
-    state: present
-    update_cache: yes
-- name: install nodejs
-  become: yes
-  apt:
-    name: nodejs
-    state: present
+    upgrade: "yes"
 
+- name: "install dependencies."
+  become: true
+  apt:
+    name: ["nodejs", "npm"]
+    state: latest
+    update_cache: yes
+
+- name: "install pm2"
+  become: true
+  npm:
+    name: pm2
+    global: yes
+    production: yes
+    state: present
